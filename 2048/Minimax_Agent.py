@@ -35,11 +35,11 @@ class MinimaxAgent(Agent):
 
         # Caso Base returns (action, board, value)
         if board.get_max_tile() >= 2048:
-            return (-1, board, -10e8)
+            return (-1, board, -10e10)
         if not board.get_available_moves():
             return (-1, board, 10e5)
-        if deep == 4:
-            return (-1, board, self.heuristic(board))
+        if deep == 5:
+            return (-1, board, self.heuristic_utility(board))
 
         #Casos no base
         action_nodes = []
@@ -65,22 +65,7 @@ class MinimaxAgent(Agent):
             return min(action_nodes, key=lambda x: x[2])
 
 
-    def heuristic_utility(self, board: GameBoard) -> int:
-        """
-        Algunas heurisitcas posibles son:\n
-            - Calcular el \"smoothness\" del tablero. Esto es porque cuanto mas \"smooth\" el tablero, mas facil es juntar fichas. Para ello debemos:
-                - Aplicar la raiz cuadrada al tablero
-                - Sumar la diferencia entre cada casilla y la de abajo
-                - Sumar la diferencia entre cada casilla y la de la derecha
-                - Elevar este resultado a un smoothness_weight a determinar
-                - Multiplicar por -1
-            - Calcular el valor del tablero. Esto es porque cuanto mas fichas grandes tengo, mas cerca de ganar estoy. Para ello debemos:
-                - Elevar el tablero al cuadrado
-                - Sumar todos los valores que se encuentran en el tablero
-            - Calcular la cantidad de espacios vacios. Esto es porque cuanto mas espacios vacios tengo, menos chance de tener un mal estado. Para ello debemos:
-                - Obtener la cantidad de celdas vacias
-                - Multiplicar por un empty_weight (recomendable en el orden de las decenas de miles)
-        """
+    def heuristic_smoothness(self, board: GameBoard) -> int:
         copy_board = board.clone()
         grid = np.sqrt(copy_board.grid)
         total = 0
@@ -121,9 +106,9 @@ class MinimaxAgent(Agent):
             return -10000
         return 2048
 
-    def heuristic(self, board: GameBoard) -> int:
+    def heuristic_utility(self, board: GameBoard) -> int:
         weight_board_h = self.heuristic_weight_board(board)
-        smoothness_h = self.heuristic_utility(board)
+        smoothness_h = self.heuristic_smoothness(board)
         total_board_value_h = self.heuristic_total_board(board)
         tile_max_position_h = self.heuristic_max_tile_position(board)
 
