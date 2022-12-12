@@ -35,11 +35,11 @@ class MinimaxAgent(Agent):
 
         # Caso Base returns (action, board, value)
         if board.get_max_tile() >= 2048:
-            return (-1, board, -100000)
+            return (-1, board, -10e8)
         if not board.get_available_moves():
-            return (-1, board, 100000)
-        if deep == 5:
-            return (-1, board, self.heuristic_weight_board(board))
+            return (-1, board, 10e5)
+        if deep == 4:
+            return (-1, board, self.heuristic(board))
 
         #Casos no base
         action_nodes = []
@@ -51,7 +51,7 @@ class MinimaxAgent(Agent):
             available_cells = child_node.get_available_cells()[:5]
             random.shuffle(available_cells)
             for free_pos in available_cells:
-                child_node.insert_tile(free_pos, 4)
+                child_node.insert_tile(free_pos, 2)
                 action_nodes.append(self.minimax(child_node, deep +1, 0))
             return max(action_nodes, key=lambda x: x[2])
         else:
@@ -81,7 +81,6 @@ class MinimaxAgent(Agent):
                 - Obtener la cantidad de celdas vacias
                 - Multiplicar por un empty_weight (recomendable en el orden de las decenas de miles)
         """
-        smoothness_weight = 0.7
         copy_board = board.clone()
         grid = np.sqrt(copy_board.grid)
         total = 0
@@ -93,27 +92,45 @@ class MinimaxAgent(Agent):
             for j, value in enumerate(fila[:-1]):
                 total = value + abs(value - grid[i, j+1])
         
-        return (total ** smoothness_weight) * -1
+        return (total ** 2) * -1
+    
+
+    def heuristic_total_board(self, board: GameBoard) -> int:
+        copy_board = board.clone()
+        grid = np.square(copy_board.grid)
+        return np.sum(grid) * -1
 
     
     def heuristic_weight_board(self, board: GameBoard) -> int:
         WEIGHT_MATRIX = [
-            [2048, 1024, 64, 32],
-            [512, 128, 16, 2],
-            [256, 8, 2, 1],
+            [2048, 1024, 512, 256],
+            [256, 128, 16, 2],
+            [64, 16, 2, 1],
             [4, 2, 1, 1]
         ]
-        WEIGHT_MATRIX = [
-            [65536,32768,16384,8192],
-            [512,2048,1024,1024],
-            [256,128,64,32],
-            [2,4,8,16]]
         result = 0
         for i, row in enumerate(board.grid):
             for j, val in enumerate(row):
                 result += val * WEIGHT_MATRIX[i][j]
 
         return result * -1
+    
+    def heuristic_max_tile_position(self, board: GameBoard) -> int:
+        max_tile = board.get_max_tile()
+        if board.grid[0,0] == max_tile:
+            return -10000
+        return 2048
+
+    def heuristic(self, board: GameBoard) -> int:
+        weight_board_h = self.heuristic_weight_board(board)
+        smoothness_h = self.heuristic_utility(board)
+        total_board_value_h = self.heuristic_total_board(board)
+        tile_max_position_h = self.heuristic_max_tile_position(board)
+
+        alpha = 2.8
+        beta = 1.7
+        gama = 1
+        return (weight_board_h * alpha) + (smoothness_h * beta) + (total_board_value_h * gama) + tile_max_position_h
 
         
 
